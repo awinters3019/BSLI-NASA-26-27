@@ -3,4 +3,5 @@
 slprj/
 *.slxc
 *.mat
+*.original
 EOF
