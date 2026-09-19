@@ -1,7 +1,9 @@
 %% Benjamin Brobst -- BSLI SSTR -- 3DOF Helper -- 9/8/26
 
 clearvars;
-S = 0.2; % ft^2
+r = 3.06/12; % radius of rocket in ft
+S = pi * r^2; % fixed reference area, as needed
+L = 158/12; % length of rocket in ft
 
 model_path = fileparts(get_param(bdroot, 'FileName'));   % .../3-DOF/model
 parent_path = fileparts(model_path);                      % .../3-DOF
