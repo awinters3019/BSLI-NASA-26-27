@@ -1,6 +1,7 @@
 *.asv
 *.autosave
 slprj/
+results/
 *.slxc
 *.mat
 *.original
