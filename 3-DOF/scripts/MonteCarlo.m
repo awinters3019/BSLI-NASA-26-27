@@ -16,7 +16,7 @@ cfg.temp_R       = linspace(1532/3, 1589/3, 4); % ~6.3 R steps
 cfg.cant_deg     = linspace(5, 10, 5);          % 1.25 deg steps
 cfg.wind_mph     = [0 5 10 15 20];
 cfg.n_seeds      = 6;      % gust seeds per condition (wind > 0 only)
-cfg.cant_sign    = +1;     % +1 = tilt INTO the wind, -1 = with it (verify, see below)
+cfg.cant_sign    = +1;     % +1 = tilt INTO the wind, -1 = with it
 cfg.gust_frac    = 0.2;    % gust_sigma = 0.2 * mean wind
 cfg.dt           = 0.2;    % s, stored-profile resolution
 cfg.t_max        = 250;    % s, profile grid length

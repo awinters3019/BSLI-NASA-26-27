@@ -29,6 +29,6 @@ Cf = 0.455/log10(Re)^2.58 / (1 + 0.144*M^2)^0.65;     % turbulent, compressible
 Cd_body = Cf*r.fb*r.Swet_body/r.S;                     % skin friction w/ form factor
 Cd_fins = Cf*(1 + 2*r.t_fin/r.c_fin)*r.Swet_fins/r.S;
 Cd_base = (0.12 + 0.13*M^2)*(1 - burning)*r.Abase_ratio;
-Cd_wave = r.Cdw_pk*max(0, (M - 0.8)/0.15)^2;           % placeholder, needs tuning
+Cd_wave = r.Cdw_pk*max(0, (M - 0.8)/0.15)^2; % zero for our rocket (M = 0.6 max)
 CA = r.k_cd*(Cd_body + Cd_fins + Cd_base + Cd_wave + r.Cd_extra);
 end
