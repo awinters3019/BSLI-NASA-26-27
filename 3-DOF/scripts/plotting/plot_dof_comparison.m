@@ -1,5 +1,5 @@
 % plot_dof_comparison.m -- 6-DOF vs 3-DOF illustration for the report
-scripts_dir = fileparts(mfilename('fullpath'));
+scripts_dir = fileparts(fileparts(mfilename('fullpath')));
 if isempty(scripts_dir) || startsWith(scripts_dir, tempdir)
     scripts_dir = fileparts(matlab.desktop.editor.getActiveFilename);
 end

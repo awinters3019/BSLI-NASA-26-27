@@ -1,95 +1,90 @@
-%% MonteCarlo.m  -- batch Monte Carlo for the 3-DOF rocket model
-clear; clearvars; clc;
-% locate project folders from this file's own location
+function MonteCarlo(cfg)
+% MONTECARLO  Batch Monte Carlo driven entirely by a config struct.
+%   MonteCarlo()         uses config()
+%   MonteCarlo(cfg)      uses a modified config (see scripts/experiments/)
+if nargin < 1, cfg = config(); end
+
+%% --------- 1. Locate project folders and load the model ---------
 scripts_dir = fileparts(mfilename('fullpath'));      % .../3-DOF/scripts
 parent_path = fileparts(scripts_dir);                % .../3-DOF
-model_dir   = fullfile(parent_path, 'model');        % .../3-DOF/model
-data_dir    = fullfile(parent_path, 'data');         % .../3-DOF/data
-addpath(model_dir, data_dir, scripts_dir);
-mdl = 'TDOF_simulink_v2';                       % model name; no .slx
+model_dir   = fullfile(parent_path, 'model');
+data_dir    = fullfile(parent_path, 'data');
+func_dir    = fullfile(scripts_dir, 'functions');
+addpath(model_dir, data_dir, scripts_dir, func_dir);
+
+mdl = cfg.sim.model;                                 % model name, no .slx
 assert(isfile(fullfile(model_dir, [mdl '.slx'])), 'Model not found in %s', model_dir);
 load_system(fullfile(model_dir, [mdl '.slx']));
 
-%% ---------------- 1. Configuration ----------------
-cfg.pressure_psf = linspace(2086, 2125, 4);     % 13 psf steps
-cfg.temp_R       = linspace(1532/3, 1589/3, 4); % ~6.3 R steps
-cfg.cant_deg     = linspace(5, 10, 5);          % 1.25 deg steps
-cfg.wind_mph     = [0 5 10 15 20];
-cfg.n_seeds      = 6;      % gust seeds per condition (wind > 0 only)
-cfg.cant_sign    = +1;     % +1 = tilt INTO the wind, -1 = with it
-cfg.gust_frac    = 0.2;    % gust_sigma = 0.2 * mean wind
-cfg.dt           = 0.2;    % s, stored-profile resolution
-cfg.t_max        = 250;    % s, profile grid length
-cfg.sim_stop     = 400;    % s, safety stop (runs hitting this are flagged landed=false)
-nWorkers = 4;              % cores dedicated to the Monte Carlo
+%% --------- 2. Output folder and config snapshot ---------
+outdir = fullfile(parent_path, 'results', cfg.name);
+if cfg.mc.n_pilot > 0
+    outdir = [outdir '_pilot'];       % pilots never mix with the full run
+end
+writeSnapshot(cfg, outdir);           % documents the run, guards against mixing configs
+
+%% --------- 3. Run table ---------
+T = buildRunTable(cfg);
+if cfg.mc.n_pilot > 0, T = T(1:min(cfg.mc.n_pilot, height(T)), :); end
+N = height(T);
+tgrid = (0:cfg.out.dt:cfg.out.t_max)';
+nProf = 4 + 2*cfg.out.save_extras;
+fprintf('%d runs, ~%.0f MB of profiles, output: %s\n', ...
+        N, N*numel(tgrid)*nProf*4/1e6, outdir);
+
+%% --------- 4. Parallel pool ---------
+nWorkers = cfg.mc.n_workers;
 pool = gcp('nocreate');
 if ~isempty(pool) && pool.NumWorkers ~= nWorkers
-    delete(pool);  pool = [];       % wrong size, restart it
+    delete(pool);  pool = [];
 end
 if isempty(pool)
     parpool('Processes', nWorkers);
 end
-cfg.batch_size = 16*nWorkers;       % 96, a multiple of the worker count
-cfg.save_extras  = true;   % also store theta(t), q(t)
-cfg.n_pilot      = 0;     % >0 = smoke test with this many runs; set 0 for the full run
+paths = {model_dir, data_dir, scripts_dir, func_dir};   % workers don't inherit the client path
 
-[envP0, r0, data0, chute0, launch0] = initialize_vars(data_dir);
-
-%% ---------------- 2. Build the run table ----------------
-[P,T,C,W,S] = ndgrid(cfg.pressure_psf, cfg.temp_R, cfg.cant_deg, cfg.wind_mph, 1:cfg.n_seeds);
-runs = table(P(:),T(:),C(:),W(:),S(:), 'VariableNames', ...
-             {'P_psf','T_R','cant_deg','wind_mph','seed_idx'});
-runs(runs.wind_mph==0 & runs.seed_idx>1, :) = [];   % no gusts at 0 wind -> extra seeds are duplicates
-runs.run_id    = (1:height(runs))';
-runs.gust_seed = runs.run_id;                       % incrementing, unique, replayable
-rng(0);  runs = runs(randperm(height(runs)), :);    % shuffle: stopping early still gives a fair sample
-if cfg.n_pilot > 0, runs = runs(1:cfg.n_pilot, :); end
-N = height(runs);
-
-tgrid = (0:cfg.dt:cfg.t_max)';
-nProf = 4 + 2*cfg.save_extras;
-fprintf('%d runs, ~%.0f MB of profiles\n', N, N*numel(tgrid)*nProf*4/1e6);
-
-outdir = fullfile(fileparts(fileparts(mfilename('fullpath'))), 'results');
-if ~exist(outdir,'dir'), mkdir(outdir); end
-
-%% ---------------- 3. Run in batches ----------------
-nB = ceil(N/cfg.batch_size);
+%% --------- 5. Batches ---------
+bs = cfg.mc.batch_size;
+nB = ceil(N/bs);
 for b = 1:nB
     f = fullfile(outdir, sprintf('mc_batch_%03d.mat', b));
-    if isfile(f), fprintf('Batch %d exists, skipping\n', b); continue; end
-    idx = (b-1)*cfg.batch_size+1 : min(b*cfg.batch_size, N);
+    if isfile(f), fprintf('Batch %d/%d exists, skipping\n', b, nB); continue; end
+    idx = (b-1)*bs+1 : min(b*bs, N);
+    K   = numel(idx);
 
-    clear in
-    for k = 1:numel(idx)
-        in(k) = buildInput(mdl, runs(idx(k),:), envP0, launch0, cfg); %#ok<SAGROW>
+    % build one SimulationInput per run
+    in = repmat(Simulink.SimulationInput(mdl), 1, K);
+    for k = 1:K
+        in(k) = buildInput(cfg, T(idx(k),:), data_dir);
     end
 
     tic
-    paths = {model_dir, data_dir, scripts_dir};
-    out = parsim(in, 'ShowProgress','on', ... 'TransferBaseWorkspaceVariables','off', ...
-             'SetupFcn', @() addpath(paths{:}));
+    out = parsim(in,'ShowProgress','on','SetupFcn', @() addpath(paths{:}));
+
+    % reduce each run to a summary row + downsampled profiles
     clear m prof
-    for k = 1:numel(idx)
-        [m(k), prof(k)] = extractRun(out(k), tgrid, cfg); %#ok<SAGROW>
+    for k = 1:K
+        [m(k), prof(k)] = extractRun(out(k), tgrid, cfg); %#ok<AGROW>
     end
-    M = [runs(idx,:), struct2table(m)];
+    M  = [T(idx,:), struct2table(m(:))];
     PR = struct();
     for n = fieldnames(prof)'
         PR.(n{1}) = vertcat(prof.(n{1}));
     end
     save(f, 'M', 'PR', '-v7');
 
-    % Did the overrides actually reach the model? (see "Pilot check")
-    dev = max(abs(M.T0_logged - M.T_R), [], 'omitnan');
-    fprintf('Batch %d/%d: %.0f s, %d failed, max T-override error %.3g R\n', ...
-            b, nB, toc, sum(~M.ok), dev);
-    if dev > 1e-3
-        warning('Overrides are NOT reaching the model - see the initialize_vars guard.');
+    % sanity check: if inputs were swept but every apogee is identical,
+    % the overrides are almost certainly not reaching the model
+    ok = M.ok;
+    msg = '';
+    if nnz(ok) > 1 && numel(cfg.sweep) > 0 && std(M.apogee_ft(ok)) < 1e-6
+        msg = '  WARNING: identical apogees, overrides may not be reaching the model';
     end
+    fprintf('Batch %d/%d: %.0f s, %d failed, %d not landed%s\n', ...
+            b, nB, toc, sum(~M.ok), sum(M.ok & ~M.landed), msg);
 end
 
-%% ---------------- 4. Merge ----------------
+%% --------- 6. Merge batches ---------
 files = dir(fullfile(outdir, 'mc_batch_*.mat'));
 M = table();  PR = struct();
 for i = 1:numel(files)
@@ -100,6 +95,8 @@ for i = 1:numel(files)
         PR.(n{1}) = [PR.(n{1}); s.PR.(n{1})];
     end
 end
-save(fullfile(outdir,'mc_profiles.mat'), 'M','PR','tgrid','cfg','-v7.3');
-writetable(M, fullfile(outdir,'mc_summary.csv'));
-fprintf('Done: %d runs merged -> %s\n', height(M), outdir);
+save(fullfile(outdir, 'mc_profiles.mat'), 'M', 'PR', 'tgrid', 'cfg', '-v7.3');
+writetable(M, fullfile(outdir, 'mc_summary.csv'));
+fprintf('Done: %d runs merged (%d ok, %d landed) -> %s\n', ...
+        height(M), sum(M.ok), sum(M.landed), outdir);
+end

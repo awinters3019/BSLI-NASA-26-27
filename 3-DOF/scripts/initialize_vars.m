@@ -1,4 +1,5 @@
 function [envP,r,data,chute,launch] = initialize_vars(data_dir)
+% OBSOLETE
 % initialize_vars_and_data
 % Input values for relevant environmental properties, rocket geometry, and
 % spreadsheets.
@@ -26,8 +27,7 @@ envP.gust_gain  = envP.gust_sigma * sqrt(2*envP.gust_tau);
 
 % Create data for Thrust Curve
 warning('off','all');
-ThrustData = readtable(fullfile(data_dir,"ThrustData.csv"), ...
-                                    MissingRule="omitrow");
+ThrustData=readtable(fullfile(data_dir,"ThrustData.csv"),MissingRule="omitrow");
 warning('on','all');
 
 % Cut off the data at apogee (everything is constant after this point.)
@@ -57,13 +57,13 @@ data.dI_dt_vec    = [I_dot*ones(1,thrustCutoff) zeros(1,apogeeCutoff-thrustCutof
 r.d   = 6.12*in2ft;                 % ft, body diameter
 r.S   = pi*r.d^2/4;                 % ft^2, total area of rocket from above
 r.L   = 148*in2ft;                  % ft, total length
-R_    = r.d/2;
+R_    = r.d/2;                      % ft, rocket radius (derived)
 Ln    = 24*in2ft;                   % ft, 4:1 ogive nose length
 
 % --- Fins ---
-Nf   = 3;                           % ASSUMED, confirm with lead
+Nf   = 3;                           % # of fins
 Cr   = 15*in2ft;   Ct = 7*in2ft;    % ft, root and tip chord
-sp   = 4.75*in2ft;                  % ft, semispan (height)
+sp   = 4.75*in2ft;                  % ft, semi-span (height)
 Xr   = 4*in2ft;                     % ft, LE sweep distance
 r.t_fin  = 0.125*in2ft;             % ft, fin thickness
 x_fin_LE = 133*in2ft;               % ft from nose tip to root LE

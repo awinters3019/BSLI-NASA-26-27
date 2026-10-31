@@ -1,4 +1,6 @@
 %% make_report_figures.m
+% variable names are potentially outdated
+
 outdir = fullfile(fileparts(fileparts(mfilename('fullpath'))), 'results');
 figdir = fullfile(outdir,'figures');  if ~exist(figdir,'dir'), mkdir(figdir); end
 load(fullfile(outdir,'mc_profiles.mat'));              % M, PR, tgrid, cfg
