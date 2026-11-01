@@ -1,4 +1,8 @@
 function air = AirData(env, state, rocket)
+% AIRDATA  Function called by Simulink MATLAB Function block.
+% Converts from the rocket body frame to the wind body frame to find
+% relative wind, velocity; and angle of attack (alpha).
+
 %#codegen
 % earth -> body (same convention as gravity: Fx=-mg*sin(theta))
 wu =  cos(state.theta)*env.wind_xe - sin(state.theta)*env.wind_ze;

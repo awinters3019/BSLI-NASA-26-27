@@ -2,9 +2,20 @@ function MonteCarlo(cfg)
 % MONTECARLO  Batch Monte Carlo driven entirely by a config struct.
 %   MonteCarlo()         uses config()
 %   MonteCarlo(cfg)      uses a modified config (see scripts/experiments/)
-if nargin < 1, cfg = config(); end
+%
+% Function calls in the MonteCarlo:
+%   writeSnapshot: Documents the configuration that was used.
+%   buildRunTable: Creates permutation table of run inputs that will be
+%     sent to Simulink.
+%   buildInput: formats configured sweeps and builds parameters in a way
+%     that Simulink can interpret.
+%   extractRun: takes the output of a finished run and begins the process
+%     of turning it into data.
+%
+% ** Needs MATLAB's Parallel Computing Toolbox. **
 
 %% --------- 1. Locate project folders and load the model ---------
+if nargin < 1, cfg = config(); end
 scripts_dir = fileparts(mfilename('fullpath'));      % .../3-DOF/scripts
 parent_path = fileparts(scripts_dir);                % .../3-DOF
 model_dir   = fullfile(parent_path, 'model');
@@ -48,7 +59,10 @@ bs = cfg.mc.batch_size;
 nB = ceil(N/bs);
 for b = 1:nB
     f = fullfile(outdir, sprintf('mc_batch_%03d.mat', b));
-    if isfile(f), fprintf('Batch %d/%d exists, skipping\n', b, nB); continue; end
+    if isfile(f)
+        fprintf('Batch %d/%d exists, skipping\n', b, nB); 
+        continue; 
+    end
     idx = (b-1)*bs+1 : min(b*bs, N);
     K   = numel(idx);
 
@@ -74,7 +88,7 @@ for b = 1:nB
     save(f, 'M', 'PR', '-v7');
 
     % sanity check: if inputs were swept but every apogee is identical,
-    % the overrides are almost certainly not reaching the model
+    % the overrides are almost certainly not reaching the model.
     ok = M.ok;
     msg = '';
     if nnz(ok) > 1 && numel(cfg.sweep) > 0 && std(M.apogee_ft(ok)) < 1e-6

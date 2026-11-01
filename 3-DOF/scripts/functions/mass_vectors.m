@@ -1,5 +1,6 @@
 function d = mass_vectors(m)
-% From inputted mass start and end parameters, convert to vectors. 
+% From inputted mass start and end parameters, convert to vectors which the 
+% lookup tables can parse.
     lbm2slug = 1/32.174;  
     kgm2_to_slugft2 = 0.737562;
     burn_time = 2.4;      % s, fixed

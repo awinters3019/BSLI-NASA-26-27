@@ -55,9 +55,6 @@ The default branch is **`3-DOF`**. This guide below assumes you work on it, or o
 - **Uncommitted work blocks a branch switch:** choose **Stash** (or commit it) when GitHub Desktop asks.
 - **Stuck:** don't force anything. Ask a lead, and share a screenshot or the output of `git status -sb`.
 
-#### 6. If you'd rather use Terminal than GitHub Desktop
-
-Equivalent Footnotes:
 [^1]: Terminal equivalent: `git clone git@github.com:awinters3019/BSLI-NASA-26-27.git` (or the HTTPS URL), then `cd BSLI-NASA-26-27`. (If that failed, type `ls` and see what the main folder inside is, then switch to it). An SSH needs a key added to your GitHub account (Settings → SSH and GPG keys); HTTPS asks for a Personal Access Token as the password, not your account password.
 [^2]: Terminal: `git checkout 3-DOF` then `git pull origin 3-DOF`. If Git says "need to specify how to reconcile divergent branches", run `git config pull.rebase false` once, then pull again.
 [^3]: Terminal: `git status -sb` (confirm you're on `3-DOF` and see the changes), `git add <files>` (or `git add -A` for everything), `git commit -m "message"`.

@@ -1,9 +1,13 @@
 function writeSnapshot(cfg, outdir)
-% Saves the exact configuration next to the results. Refuses to mix two 
-% configurations in one folder.
-if ~exist(outdir,'dir'), mkdir(outdir); end
+% WRITESNAPSHOT  Saves the exact configuration next to the results.
+% Refuses to mix two configurations into one folder.
+if ~exist(outdir,'dir')
+    mkdir(outdir); 
+end
 snap = cfg;
-if ~isempty(snap.mc.single_rep_if), snap.mc.single_rep_if = func2str(snap.mc.single_rep_if); end
+if ~isempty(snap.mc.single_rep_if)
+    snap.mc.single_rep_if = func2str(snap.mc.single_rep_if); 
+end
 snap.derived = derive_params(cfg.params);
 js = jsonencode(snap, 'PrettyPrint', true);
 f = fullfile(outdir, 'config_snapshot.json');

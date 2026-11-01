@@ -1,6 +1,10 @@
 function p = derive_params(p)
-% Computes everything the model reads from the INPUTS. 
-% Sweep inputs but never these parameters.
+% DERIVE_PARAMS  Computes everything the model reads from the INPUTS. 
+% - Unit Conversions
+% - Barrowman equations which derive new constants
+% - Other miscellaneous derived values
+% Don't change these or try to sweep these inputs!
+
 in2ft = 1/12;
 e = p.envP;
 e.wind_speed = e.wind_mph*5280/3600;                % ft/s

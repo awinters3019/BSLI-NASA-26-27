@@ -1,4 +1,8 @@
 function env = Environment(Z,gust,envP)
+% ENVIRONMENT  Function called by Simulink MATLAB Function block.
+% Based on rocket altitude, returns altitude-dependent variables to the
+% Environment Bus.
+
 %#codegen
 % Z: earth-frame z, DOWN [ft].  gust: [ft/s].
 h  = max(-Z, 0);                         % altitude AGL [ft]

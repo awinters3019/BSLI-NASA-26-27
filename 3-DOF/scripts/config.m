@@ -1,7 +1,15 @@
 function cfg = config()
-% All user-editable settings. Units: ft, slug, s, lbf, degR, psf, rad,
-% except where a name carries its unit (_mph, _deg, _in).
-% Please experiment, edit, and change things here.
+% CONFIG  All user-editable settings for a run or Monte Carlo Analysis.
+%
+% Units are commented, or variable name carries its unit (_mph, _deg, _in).
+% Please experiment, edit, and change things here for single runs.
+% For Monte Carlo analysis, I recommend making an experimental config under
+% the directory 3-DOF/scripts/experiments for good documentation.
+% This function calls:
+%   sweepVar: Converts desired sweep fields into a condensed struct
+
+% ------- EVERYTHING BELOW CAN BE EDITED ------- %
+
 cfg.name = 'config_testing';                % results go to results/<name>/
 
 %% ---- Files (read by load_data) ----
@@ -58,6 +66,10 @@ cfg.params = p;
 %% --- Sweep: any input path, any number of variables, for Monte Carlo ---
 % 'levels' = explicit values (numeric, logical, or string array)
 % 'range'  = [lo hi]; grid uses n evenly spaced points, lhs/random sample continuously
+
+% Below is the default PDR sweep which will run if you run "Monte_Carlo" in
+%   the command window. I recommend you use an experimental config for (see 
+%   3-DOF/scripts/experiments) for your own sweeps, for good documentation!
 cfg.sweep = [
     sweepVar('envP.P_ground',   'range',  [2086 2125],       'n',4, 'name','P_psf')
     sweepVar('envP.T_ground',   'range',  [510.67 529.67],   'n',4, 'name','T_R')
@@ -67,6 +79,10 @@ cfg.sweep = [
 
 %% ---- Monte Carlo ----
 cfg.mc.mode          = 'grid';            % 'grid' | 'lhs' | 'random'
+% Grid: Chooses unique permutations from the sweep so all get covered
+% LHS: Latin Hypercube Sampling --> See Wikipedia
+% Random: Draws truly random points from the sweep
+
 cfg.mc.n_reps        = 6;                 % replicates per grid point (grid mode)
 cfg.mc.n_samples     = 2000;              % total runs (lhs/random) -- don't worry about this for grid
 cfg.mc.seed_path     = 'envP.gust_seed';  % each run's unique seed is written here ('' = none)
