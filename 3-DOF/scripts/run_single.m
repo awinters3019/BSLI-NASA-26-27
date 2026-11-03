@@ -1,4 +1,4 @@
-function out = run_single(cfg, ovr)
+function out = run_single(cfg, ovr, make_snapshot)
 % RUN_SINGLE  Grants ability to run a single default run or a custom
 % configuration, and yields documentation of it.
 
@@ -22,6 +22,9 @@ for f = fieldnames(p)'
 end
 in  = in.setModelParameter(cfg.sim.model_params{:});
 out = sim(in);
+
+if make_snapshot || (nargin < 3)
 writeSnapshot(cfg, fullfile(fileparts(scripts_dir), 'results',...
     ['single_' char(datetime('now','Format','yyyyMMdd_HHmmss'))]));
+end
 end

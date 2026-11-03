@@ -8,7 +8,7 @@ EXPORT_VIDEO = true;                  % true = also write an .mp4 to results/fig
 OVERWRITE    = false;                 % false = skip if this run's video already exists
 VIDEO_FPS    = 30;                    % frames per second in the video
 VIDEO_SPEED  = 3;                     % 3 = video plays 3x faster than real flight time
-ROCKET_FRAC  = 0.05;                  % rocket drawn length as a fraction of apogee (was 0.04)
+ROCKET_FRAC  = 0.04;                  % rocket drawn length as a fraction of apogee (was 0.04)
 col_red  = [0.85 0.10 0.10];          % rocket and chute color until main deploys
 col_blue = [0.10 0.30 0.90];          % rocket and chute color once main is out
 

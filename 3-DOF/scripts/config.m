@@ -99,4 +99,5 @@ cfg.sim.model_params = {'StopTime','400', 'InspectSignalLogs','off'};  % any set
 cfg.out.dt           = 0.2;               % s, stored-profile resolution
 cfg.out.t_max        = 250;
 cfg.out.save_extras  = true;              % theta(t), q(t)
+cfg.out.run_single_make_snapshot = false;
 end

@@ -1,14 +1,16 @@
 function rocket_viewer_full(matfile)
 % rocket_viewer_full(matfile): overview + true-scale zoomed inset with alpha, CP, forces, wind
 %% ---- Settings ----
-EXPORT_VIDEO = false;  OVERWRITE = false;  VIDEO_FPS = 30;  VIDEO_SPEED = 2;
+EXPORT_VIDEO = false;  OVERWRITE = false;  VIDEO_FPS = 24;  VIDEO_SPEED = 2;
 VIEW_HALF = 1.5;      % inset half-width, in rocket lengths
 F_REF     = 50;       % lbf: forces well below this look linear, larger ones are compressed
 M_REF      = 10;      % lbf*ft: moments well below this look linear, larger ones compress
-col_moment = [0.85 0.45 0.00];
 ARROW_MAX = 0.8;      % longest force arrow, in rocket lengths
-col_red = [0.85 0.10 0.10];  col_blue = [0.10 0.30 0.90];
 TICK_STEP = [5 50 50 50 50 10 5];   % grid step [ft] by phase: Pad Boost Coast Drogue MainDelay Main Landed
+col_red = [0.85 0.10 0.10];  
+col_blue = [0.10 0.30 0.90];
+col_orange = [0.85 0.45 0.00];
+col_bright_orange = [1 .6 0];
 
 % Load paths and file data 
 scripts_dir = fileparts(mfilename('fullpath'));
@@ -20,18 +22,22 @@ if nargin < 1
 end
 S = load(matfile, 'F');  F = S.F;
 
-
+% Get variables and geom from matfile, giving time series to be referenced
 t = F.t(:);  dt = F.dt;  n = numel(t);
-th_all = unwrap(F.theta(:));  alt = -F.Z(:);  Xd = F.X(:); % extract variables
+th_all = unwrap(F.theta(:));  alt = -F.Z(:);  Xd = F.X(:);
 th_all(1) = th_all(2); % Make sure rocket appears nose-up on pad (may be obsolete now)
 r = F.r;  Lr = r.L;  R = r.d/2;  Ln = r.Ln_in/12;
 pnames = {'Pad','Boost','Coast','Drogue','Main delay','Main','Landed'};   % phase value 0-->6
 
-% Rocket outline in body coordinates: s = distance aft of nose tip, w = sideways offset
-sN = linspace(0, Ln, 15);  wN = R*(2*(sN/Ln) - (sN/Ln).^2);              % parabolic nose
+% Rocket & shape outlines in body coordinates: s = distance aft of nose tip, w = sideways offset
+sN = linspace(0, Ln, 15);  wN = R*(2*(sN/Ln) - (sN/Ln).^2);  % parabolic nose
 bodyS = [sN, Lr, Lr, fliplr(sN)];  bodyW = [wN, R, -R, -fliplr(wN)];
+
 sf = r.xfinLE_in/12;  Cr = r.Cr_in/12;  Ct = r.Ct_in/12;  sp = r.sp_in/12;  Xr = r.Xr_in/12;
 finS = [sf, sf+Cr, sf+Xr+Ct, sf+Xr];  finW = [R, R, R+sp, R+sp];
+
+flameS = [Lr,Lr,1.2*Lr,Lr];
+flameW = [R, -R,     0,R ];
 
 % Give maximum lengths and values for the force and moment arrows 
 Fmax = max([abs(F.Fx(:)); abs(F.Fz(:)); 1]);
@@ -42,6 +48,7 @@ Mmax   = max([abs(Mz_all); 1]);
 
 %% ---- Figure: overview (left) and zoomed inset (right) ----
 fig = figure('Color','w','Position',[60 60 1350 700],'Name','Full-resolution viewer');
+set(gcf, 'Position', get(0, 'Screensize'));
 axO = axes(fig,'Position',[0.04 0.17 0.28 0.75]);  hold(axO,'on');  grid(axO,'on');  box(axO,'on');
 padx = 0.1*max(range(Xd), 0.2*max(alt));
 xlim(axO,[min(Xd)-padx, max(Xd)+padx]);  ylim(axO,[-0.05*max(alt), 1.1*max(alt)]);  daspect(axO,[1 1 1]);
@@ -68,22 +75,23 @@ hChute     = plot(axI,NaN,NaN,'-','LineWidth',3);
 body = patch(axI,NaN,NaN,col_red,'EdgeColor','k');
 fin1 = patch(axI,NaN,NaN,[.3 .3 .3],'EdgeColor','k','HandleVisibility','off');
 fin2 = patch(axI,NaN,NaN,[.3 .3 .3],'EdgeColor','k','HandleVisibility','off');
+flame = patch(axI,NaN,NaN,col_bright_orange,'EdgeColor','k');
 hV   = plot(axI,NaN,NaN,'--','Color',[.2 .6 .9],'LineWidth',1.5);
 hArc = plot(axI,NaN,NaN,'-','Color',[.6 0 .6],'LineWidth',2.5);
 hCG  = plot(axI,NaN,NaN,'o','MarkerSize',9,'MarkerFaceColor','w','MarkerEdgeColor','k','LineWidth',1.5);
-hCP  = plot(axI,NaN,NaN,'d','MarkerSize',10,'MarkerFaceColor',[1 .6 0],'MarkerEdgeColor','k');
+hCP  = plot(axI,NaN,NaN,'d','MarkerSize',10,'MarkerFaceColor',col_bright_orange,'MarkerEdgeColor','k');
 qFx  = quiver(axI,0,0,0,0,0,'LineWidth',3,'Color',[0.85 0 0.5],'MaxHeadSize',0.8);   % scale 0 = no autoscale
 qFz  = quiver(axI,0,0,0,0,0,'LineWidth',3,'Color',[0 0.6 0.2],'MaxHeadSize',0.8);
 qW   = quiver(axI,0,0,0,0,0,'LineWidth',3,'Color',[0.1 0.5 0.9],'MaxHeadSize',0.8,'HandleVisibility','off');
 hW     = text(axI,0,0,'','Color',[0.1 0.5 0.9],'FontWeight','bold','HorizontalAlignment','center');
 hAlpha = text(axI,0,0,'','Color',[.6 0 .6],'FontWeight','bold','FontSize',12,'HorizontalAlignment','center');
 hMref  = plot(axI,NaN,NaN,':','Color',[.7 .7 .7],'LineWidth',1,'HandleVisibility','off');  % reference circle
-hMarc  = plot(axI,NaN,NaN,'-','Color',col_moment,'LineWidth',3);
-hMhead = patch(axI,NaN,NaN,col_moment,'EdgeColor',col_moment,'HandleVisibility','off');
-hMtxt  = text(axI,0,0,'','Color',col_moment,'FontWeight','bold','HorizontalAlignment','center');
+hMarc  = plot(axI,NaN,NaN,'-','Color',col_orange,'LineWidth',3);
+hMhead = patch(axI,NaN,NaN,col_orange,'EdgeColor',col_orange,'HandleVisibility','off');
+hMtxt  = text(axI,0,0,'','Color',col_orange,'FontWeight','bold','HorizontalAlignment','center');
 hInfo  = text(axI,0.01,0.99,'','Units','normalized','VerticalAlignment','top','FontName','FixedWidth','FontSize',10);
-legend(axI,[hCG hCP qFx qFz hV hArc hMarc],{'CG','CP (effective)','F_x (body x)','F_z (body z)', ...
-       'direction of travel','angle of attack','net moment M'},'Location','northeast');
+legend(axI,[hCG hCP qFx qFz hMarc hV hArc],{'CG','CP (effective)','F_x (body x)','F_z (body z)','net moment M', ...
+       'direction of travel','angle of attack'},'Location','northeast');
 
 %% ---- Controls ----
 sl  = uicontrol(fig,'Style','slider','Units','normalized','Position',[0.04 0.08 0.93 0.03], ...
@@ -114,8 +122,9 @@ if EXPORT_VIDEO, exportVideo(); end
         xcp = g(F.xcp);  sm = NaN;
         if isnan(xcp), set(hCP,'XData',NaN,'YData',NaN);
         else
-            [px,py] = toWorld(xcp,0,x0,y0,th,xcg);  set(hCP,'XData',px,'YData',py);
-            sm = (xcp - xcg)/r.d;                       % calibers, positive = stable
+            [px,py] = toWorld(xcp,0,x0,y0,th,xcg);  
+            set(hCP,'XData',px,'YData',py);
+            sm = (xcp - xcg)/r.d;           % calibers, positive = stable
         end
 
         % direction of travel through the air, and angle of attack
@@ -139,10 +148,18 @@ if EXPORT_VIDEO, exportVideo(); end
         set(qW,'XData',tx,'YData',y0,'UData',sg*0.5*Lr,'VData',0);
         set(hW,'Position',[tx+sg*0.25*Lr, y0+0.12*Lr, 0],'String',sprintf('wind %.1f ft/s',abs(w)));
 
+        % burn cartoon (flame under rocket)
+        if ph == 1
+        [flamex,flamey] = toWorld(flameS,flameW,x0,y0,th,xcg);  
+        set(flame,'XData',flamex,'YData',flamey,'FaceColor',col_bright_orange);
+        else
+            set(flame,'XData',NaN,'YData',NaN);
+        end
+
         % chute cartoon, true diameter, trailing downstream of the attach point
         if ph >= 3 && ph < 6
             if ph >= 5, d = F.chute.d_main_in/12; else, d = F.chute.d_drogue_in/12; end
-            [ax_,ay_] = toWorld(r.x_attach,0,x0,y0,th,xcg);  A = [ax_; ay_];
+            [ax_,ay_] = toWorld(r.x_attach,0,x0,y0,th,xcg); A = [ax_; ay_];
             dv = -vh;  pv = [-dv(2); dv(1)];  C = A + 0.7*Lr*dv;
             e1 = C + (d/2)*pv;  e2 = C - (d/2)*pv;  aa = linspace(0,pi,30);
             dome = C + (d/2)*pv*cos(aa) + (d/3)*dv*sin(aa);

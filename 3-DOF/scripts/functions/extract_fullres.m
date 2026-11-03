@@ -32,24 +32,25 @@ end
 F.Fx = F.Fx_thr + F.Fx_aero + F.Fx_chute;      % net applied force, body x [lbf]
 F.Fz = F.Fz_thr + F.Fz_aero + F.Fz_chute;      % net applied force, body z [lbf] (gravity is NOT included)
 
-% Effective center of pressure, rebuilt from the same formulas BodyAero uses.
-% The dynamic pressure q*S cancels in the ratio, so only alpha and Mach are needed.
-r  = p.r;
-Mc = min(F.Mach, 0.9);
-sa = sin(F.alpha);  ca = cos(F.alpha);
-Np = (r.CNa_pot ./ sqrt(1 - Mc.^2)) .* sa .* ca;      % potential-flow normal force / (q*S)
-Nc = (r.Cdc*r.Aplan/r.S) * abs(sa) .* sa;             % crossflow normal force / (q*S)
-xcp = (Np*r.x_cp_pot + Nc*r.x_cf) ./ (Np + Nc);
-xcp(abs(sa) < 1e-3) = r.x_cp_pot;                     % alpha ~ 0: the potential-flow CP
-xcp = min(max(xcp, 0), r.L);                          % keep it on the airframe
-xcp(F.V < r.Vmin | ~isfinite(xcp)) = NaN;             % meaningless at very low airspeed
-F.xcp = xcp;                                          % ft from nose tip
 
-F.r = r;  F.chute = p.chute;                          % geometry for the viewer
+% Find effective center of pressure over time (hi Liav!)
+% The dynamic pressure q*S cancels in the ratio, so only alpha and Mach are needed
+r  = p.r;                                         % Get rocket geometry
+Mc = min(F.Mach, 0.9);                            
+sa = sin(F.alpha);  ca = cos(F.alpha);
+Np = (r.CNa_pot ./ sqrt(1 - Mc.^2)) .* sa .* ca;  % Potential-flow normal force / (q*S)
+Nc = (r.Cdc*r.Aplan/r.S) * abs(sa) .* sa;         % Crossflow normal force / (q*S)
+xcp = (Np*r.x_cp_pot + Nc*r.x_cf) ./ (Np + Nc);   % Calculate CP from potential and crossflow normals
+xcp(abs(sa) < 1e-3) = r.x_cp_pot;                 % If alpha ~ 0: replace with potential-flow CP
+xcp = min(max(xcp, 0), r.L);                      % Keep it on the rocket body
+xcp(F.V < r.Vmin | ~isfinite(xcp)) = NaN;         % If airspeed is too low, it's meaningless --> NaN
+F.xcp = xcp;                                      % ft from nose tip
+
+F.r = r;  F.chute = p.chute;                      % geometry for the viewer
 end
 
 function [t, d] = grab(logs, name, field)
-% Returns time (N x 1) and data (N x k) for a logged signal or one field of a logged bus.
+% Returns time (N x 1) and data (N x k) for a logged signal or one field of a logged bus
 el = logs.get(name);
 if isempty(el), error('Signal "%s" is not logged. Right-click the wire -> Log Selected Signals.', name); end
 if isa(el, 'Simulink.SimulationData.Dataset'), el = el{1}; end
@@ -59,5 +60,5 @@ t = v.Time(:);
 d = double(v.Data);
 if ndims(d) == 3, d = permute(d, [3 1 2]); end        % [rows cols N] -> [N rows cols]
 d = reshape(d, numel(t), []);
-[t, iu] = unique(t);  d = d(iu, :);                   % variable-step solvers can repeat timestamps
+[t, iu] = unique(t);  d = d(iu, :);  % variable-step solvers can repeat timestamps
 end
