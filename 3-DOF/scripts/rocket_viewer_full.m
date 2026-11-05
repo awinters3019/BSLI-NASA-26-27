@@ -27,7 +27,10 @@ t = F.t(:);  dt = F.dt;  n = numel(t);
 th_all = unwrap(F.theta(:));  alt = -F.Z(:);  Xd = F.X(:);
 th_all(1) = th_all(2); % Make sure rocket appears nose-up on pad (may be obsolete now)
 r = F.r;  Lr = r.L;  R = r.d/2;  Ln = r.Ln_in/12;
-pnames = {'Pad','Boost','Coast','Drogue','Main delay','Main','Landed'};   % phase value 0-->6
+drogue_str = "Drogue"; main_str = "Main"; fail_str = " (failed)";
+if F.drogue_fail, drogue_str = drogue_str + fail_str; end
+if F.main_fail, main_str = main_str + fail_str; end
+pnames = {'Pad','Boost','Coast',drogue_str,'Main delay',main_str,'Landed'};   % phase value 0-->6
 
 % Rocket & shape outlines in body coordinates: s = distance aft of nose tip, w = sideways offset
 sN = linspace(0, Ln, 15);  wN = R*(2*(sN/Ln) - (sN/Ln).^2);  % parabolic nose
@@ -45,8 +48,13 @@ lenF = @(f) sign(f) * log1p(abs(f)/F_REF) / log1p(Fmax/F_REF) * ARROW_MAX * Lr; 
 Mz_all = F.M_thr(:) + F.M_aero(:) + F.M_chute(:);   % net applied moment [lbf*ft], nose-up positive
 Mmax   = max([abs(Mz_all); 1]);
 [Yap, ia] = max(alt);  Xap = Xd(ia);  tap = t(ia);  % apogee point
+% Handle logic to decide the color of 
+Xland = Xd(end); td_v = F.V(end); td_col = "g"; td_mark = "o";
+if td_v > 20 && td_v < 150, td_col = col_bright_orange; td_mark = "hexagram";
+elseif td_v >= 150, td_col = "r"; td_mark = "hexagram"; end
 
 %% ---- Figure: overview (left) and zoomed inset (right) ----
+% axO: Overview axes
 fig = figure('Color','w','Position',[60 60 1350 700],'Name','Full-resolution viewer');
 set(gcf, 'Position', get(0, 'Screensize'));
 axO = axes(fig,'Position',[0.04 0.17 0.28 0.75]);  hold(axO,'on');  grid(axO,'on');  box(axO,'on');
@@ -54,13 +62,17 @@ padx = 0.1*max(range(Xd), 0.2*max(alt));
 xlim(axO,[min(Xd)-padx, max(Xd)+padx]);  ylim(axO,[-0.05*max(alt), 1.1*max(alt)]);  daspect(axO,[1 1 1]);
 xlabel(axO,'Downrange X [ft]');  ylabel(axO,'Altitude [ft]');  title(axO,'Overview');
 yline(axO,0,'k-','LineWidth',2);
+% yline(axO,F.main_alt,'r--','LineWidth',1); % trying to show where main delay hits
 plot(axO, Xd, alt, ':', 'Color',[.7 .7 .7]);
 trailO = plot(axO,NaN,NaN,'k-','LineWidth',1.5);
 dotO   = plot(axO,NaN,NaN,'o','MarkerFaceColor','r','MarkerEdgeColor','r');
 plot(axO, Xap, Yap, 'p', 'MarkerSize',14, 'MarkerFaceColor','y', 'MarkerEdgeColor','k');
 text(axO, Xap, Yap, sprintf('  Apogee %.0f ft', Yap), 'VerticalAlignment','bottom', 'FontWeight','bold');
+plot(axO, Xland, 0, td_mark, 'MarkerSize', 14, 'MarkerFaceColor', td_col, 'MarkerEdgeColor','k');
+text(axO,Xland,0, sprintf('  Impact: %.0f ft/s',td_v),"VerticalAlignment","bottom");
 boxO   = plot(axO,NaN,NaN,'b-','LineWidth',1.5);          % shows what the inset is looking at
 
+% axI: inset axes
 axI = axes(fig,'Position',[0.37 0.17 0.60 0.75]);  hold(axI,'on');  grid(axI,'on');  box(axI,'on');
 daspect(axI,[1 1 1]);  xlabel(axI,'Downrange X [ft]');  ylabel(axI,'Altitude [ft]');
 yline(axI,0,'k-','LineWidth',3);
@@ -70,6 +82,7 @@ plot(axI, Xap, Yap, 'p', 'MarkerSize',18, 'MarkerFaceColor','y', ...
 text(axI, Xap, Yap, sprintf('  Apogee: %.0f ft at t = %.1f s', Yap, tap),...
     'VerticalAlignment','bottom', 'FontWeight','bold', 'Clipping','on');
 
+% Initialize graphics objects
 hChuteLine = plot(axI,NaN,NaN,'-','LineWidth',1);
 hChute     = plot(axI,NaN,NaN,'-','LineWidth',3);
 body = patch(axI,NaN,NaN,col_red,'EdgeColor','k');
@@ -107,8 +120,10 @@ if EXPORT_VIDEO, exportVideo(); end
         g  = @(v) interp1(t, v(:), tt);                 % smooth value of any signal at time tt
         x0 = g(Xd);  y0 = g(alt);  th = g(th_all);  xcg = g(F.CG);
         ph = F.phase(min(max(round(tt/dt)+1,1),n));     % nearest sample for the discrete phase
+        drogue_cmd = F.drogue_cmd(min(max(round(tt/dt)+1,1),n));
+        main_cmd   = F.main_cmd(min(max(round(tt/dt)+1,1),n));
+
         c  = col_blue;                                  % rocket body: always blue
-        cc = col_red;  if ph >= 5, cc = col_blue; end   % chute: red (drogue) -> blue (main)
         xb = [cos(th); sin(th)];                        % body x (nose) in the (X, altitude) plane
         zb = [sin(th); -cos(th)];                       % body z = nose rotated 90 deg clockwise
 
@@ -149,7 +164,7 @@ if EXPORT_VIDEO, exportVideo(); end
         set(hW,'Position',[tx+sg*0.25*Lr, y0+0.12*Lr, 0],'String',sprintf('wind %.1f ft/s',abs(w)));
 
         % burn cartoon (flame under rocket)
-        if ph == 1
+        if ph == 1 % boost
         [flamex,flamey] = toWorld(flameS,flameW,x0,y0,th,xcg);  
         set(flame,'XData',flamex,'YData',flamey,'FaceColor',col_bright_orange);
         else
@@ -157,8 +172,9 @@ if EXPORT_VIDEO, exportVideo(); end
         end
 
         % chute cartoon, true diameter, trailing downstream of the attach point
-        if ph >= 3 && ph < 6
-            if ph >= 5, d = F.chute.d_main_in/12; else, d = F.chute.d_drogue_in/12; end
+        if drogue_cmd || main_cmd
+            if main_cmd, d = F.chute.d_main_in/12;
+            elseif drogue_cmd, d = F.chute.d_drogue_in/12; end
             [ax_,ay_] = toWorld(r.x_attach,0,x0,y0,th,xcg); A = [ax_; ay_];
             dv = -vh;  pv = [-dv(2); dv(1)];  C = A + 0.7*Lr*dv;
             e1 = C + (d/2)*pv;  e2 = C - (d/2)*pv;  aa = linspace(0,pi,30);

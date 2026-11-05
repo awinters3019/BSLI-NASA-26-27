@@ -8,7 +8,8 @@ m = struct('ok',false, 'landed',false, 'apogee_ft',NaN, 't_apogee_s',NaN, ...
     'land_x_ft',NaN, 'max_abs_x_ft',NaN, 'flight_time_s',NaN, ...
     'touchdown_vz_fps',NaN, 'max_q_radps',NaN, ...
     't_boost',NaN, 't_burnout',NaN, 't_drogue',NaN, 't_maindelay',NaN, ...
-    't_main',NaN, 't_landed',NaN, 'T0_logged',NaN, 'P0_logged',NaN, 'err',"");
+    't_main',NaN, 't_landed',NaN, 'T0_logged',NaN, 'P0_logged',NaN, 'err',"", ...
+    't_drogue_cmd',NaN, 't_main_cmd',NaN, 'drogue_ok',false, 'main_ok',false);
 names = {'alt','x','spd','acc'};
 
 % ADD EXTRA VARIABLES TO TRACK HERE AS DESIRED
@@ -52,6 +53,12 @@ try
     m.t_boost = tph(1); m.t_burnout = tph(2); m.t_drogue = tph(3);
     m.t_maindelay = tph(4); m.t_main = tph(5); m.t_landed = tph(6);
     m.landed = ~isnan(tph(6));
+    % --- actual chute deployment times (NaN = chute never fired) ---
+    phbus = logs.get('phase').Values;                 % struct: drogue_cmd, main_cmd, phase
+    m.t_drogue_cmd = firstOn(phbus.drogue_cmd);
+    m.t_main_cmd   = firstOn(phbus.main_cmd);
+    m.drogue_ok    = ~isnan(m.t_drogue_cmd);
+    m.main_ok      = ~isnan(m.t_main_cmd);
 
     % --- launch-condition check (did the overrides land?) ---
     env = logs.get('EnvBus').Values;
@@ -82,4 +89,12 @@ try
 catch ME
     m.err = string(ME.message); 
 end
+end
+
+function t0 = firstOn(ts)
+% Time the command first goes high; NaN if it never does.
+[tu, iu] = unique(ts.Time);
+d = double(ts.Data(iu));
+i = find(d > 0.5, 1);
+if isempty(i), t0 = NaN; else, t0 = tu(i); end
 end

@@ -17,9 +17,15 @@ end
 for nm = {'alpha','U_rel','W_rel','V','Mach'}
     [ts, d] = grab(logs, 'Air', nm{1});     F.(nm{1}) = rs(ts, d, 'linear');
 end
+for nm = {'phase','drogue_cmd','main_cmd'}
+    [ts, d] = grab(logs, 'phase', nm{1});     F.(nm{1}) = rs(ts, d, 'previous');
+end
+F.drogue_fail = p.chute.DrogueFail; % just for fancy phase titling
+F.main_fail   = p.chute.MainFail;
+F.main_alt    = p.chute.main_alt;
+
 [ts, d] = grab(logs, 'EnvBus',  'wind_xe');    F.wind_xe = rs(ts, d, 'linear');
 [ts, d] = grab(logs, 'MassBus', 'CG');         F.CG    = rs(ts, d, 'linear');
-[ts, d] = grab(logs, 'phase',   'phase');      F.phase   = rs(ts, d, 'previous'); % steps, never blends
 
 % Force/moment vectors [Fx; Fz; M] from each subsystem
 src = {'thr','FM_thrust'; 'aero','FM_aero'; 'chute','FM_chute'};
