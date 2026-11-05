@@ -6,8 +6,8 @@ parent  = fileparts(scripts_dir);
 data_dir = fullfile(parent, 'data');
 addpath(scripts_dir, fullfile(scripts_dir, 'functions'));
 
-studyName = 'config_testing_pilot';     % results/<studyName>/
-runRow    = 4;                  % which run (row of M) to replay
+studyName = 'exp01_wind_cant_grid_pilot';     % results/<studyName>/
+runRow    = 1;                  % which run (row of M) to replay
 
 S   = load(fullfile(parent, 'results', studyName, 'mc_profiles.mat'), 'M', 'cfg');
 cfg = S.cfg;  row = S.M(runRow, :);

@@ -39,7 +39,7 @@ p.launch.cant_deg  = 5;        % cant angle (degrees) from 90 deg vertical
 p.launch.cant_sign = +1;       % +1 = tilt into the wind; -1 = with wind
 
 % Rocket geometry parameters
-p.r.d_in = 6.12;           % diameter of the rocket
+p.r.d_in = 6.12;        % diameter of the rocket
 p.r.L_in = 148;         % length of the rocket
 p.r.Ln_in = 24;         % 4:1 Ogive Nosecone Length
 p.r.Nf = 3;             % Number of fins
@@ -47,20 +47,41 @@ p.r.Cr_in = 15;         % Root chord length
 p.r.Ct_in = 7;          % Tip chord length
 p.r.sp_in = 4.75;       % Semi-span distance
 p.r.Xr_in = 4;          % Leading edge sweep distance
-p.r.t_fin_in = 0.125;    % Fin thickness
+p.r.t_fin_in = 0.125;   % Fin thickness
 p.r.xfinLE_in = 133;    % Inches from nose tip to root leading edge
-p.r.k_cd = 1.25;           % Multiplicative Gain on all drag
+p.r.k_cd = 1.25;        % Multiplicative Gain on all drag
 p.r.Cd_extra = 0.02;    % Added drag for small unaccounted geometry
 p.r.Cdw_pk = 0.05;      % Wave drag peak (unused for Mach < 0.8)
 p.r.Cmq = -10;          %
 p.r.Vmin = 10;          % ft/s (fail-safe for low speeds affecting AOA)
-p.r.x_attach = p.mass.CG_end_ft;    % Location where parachutes attach (ft)
+
+% Chute attach points: use the average distance from the forward end
+% between drogue and main, since two parachutes is complex and also body
+% separation isn't even modeled, but we do want better than just attaching
+% to CG.
+% Pilot is considered negligible.
+drogue_x_attach = 8.1667;   % Location where drogue attaches (ft)
+main_x_attach = 6.8333;     % Location where main attaches (ft)
+
+p.r.x_attach = mean([drogue_x_attach main_x_attach]);
+
+% DROGUE ATTACHMENT POINT (PDR), approx: 98 inches
+% MAIN ATTACHMENT POINT (PDR), approx: 82 inches
+% p.r.x_attach = p.mass.CG_end_ft;    
 
 % Parachute parameters
 p.chute.d_drogue_in = 24;  p.chute.Cd_drogue = 1.16;
 p.chute.d_main_in = 100;   p.chute.Cd_main = 2.59;
 p.chute.tau_infl = 0.4; % time constant for inflation
-p.chute.main_alt = 1000; % ft
+p.chute.main_alt = 900; % ft. DEFAULT: 900 ft; DELAY MODE: 
+
+% Failure/Delay Modes
+p.chute.DrogueFail = false; % TRUE: No drogue deployment; FALSE: Drogue will deploy
+p.chute.DrogueDelay = 0; % DEFAULT: 0, drogue right at apogee;  DELAY MODE: 2, deploys on secondary charge (2 seconds after).
+p.chute.MainFail = false; % TRUE: No main deployment; FALSE: Main will deploy
+p.chute.MainDelay = 2; % DEFAULT: 2, main deploys 2 seconds after main_alt;
+
+
 cfg.params = p;
 
 %% --- Sweep: any input path, any number of variables, for Monte Carlo ---
