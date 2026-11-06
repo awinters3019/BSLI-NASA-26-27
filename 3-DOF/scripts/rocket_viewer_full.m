@@ -107,17 +107,29 @@ legend(axI,[hCG hCP qFx qFz hMarc hV hArc],{'CG','CP (effective)','F_x (body x)'
        'direction of travel','angle of attack'},'Location','northeast');
 
 %% ---- Controls ----
+ar = 1;
+speeds = [0.25 0.5 1 2 5];
+tNow = t(1);  simT0 = t(1);  wall0 = tic;
 sl  = uicontrol(fig,'Style','slider','Units','normalized','Position',[0.04 0.08 0.93 0.03], ...
-      'Min',t(1),'Max',t(end),'Value',t(1),'Callback',@(s,~) update(s.Value));
+      'Min',t(1),'Max',t(end),'Value',t(1),'Callback',@(s,~) scrub(s.Value));
+addlistener(sl,'ContinuousValueChange',@(s,~) scrub(s.Value));   % live scrubbing while dragging
 btn = uicontrol(fig,'Style','togglebutton','String','Play','Units','normalized', ...
-      'Position',[0.04 0.02 0.08 0.04],'Callback',@playCB);
+      'Position',[0.04 0.02 0.08 0.04],'Callback',@toggleCB);
 spdMenu = uicontrol(fig,'Style','popupmenu','String',{'0.25x','0.5x','1x','2x','5x'},'Value',3, ...
-      'Units','normalized','Position',[0.14 0.02 0.08 0.04]);
+      'Units','normalized','Position',[0.14 0.02 0.08 0.04],'Callback',@(~,~) rebase());
+tmr = timer('ExecutionMode','fixedSpacing','Period',0.04,'BusyMode','drop', ...
+            'TimerFcn',@(~,~) tick());
+fig.CloseRequestFcn = @closeCB;
+fig.SizeChangedFcn  = @(~,~) cacheAspect();
+disableDefaultInteractivity(axI);  disableDefaultInteractivity(axO);   % removes hover/toolbar overhead
+cacheAspect();
 update(t(1));
 if EXPORT_VIDEO, exportVideo(); end
 
     function update(tt)
-        g  = @(v) interp1(t, v(:), tt);                 % smooth value of any signal at time tt
+        k  = min(max((tt - t(1))/dt, 0), n-1);       % fractional index into the uniform grid
+        i0 = floor(k) + 1;  i1 = min(i0+1, n);  fr = k - floor(k);
+        g  = @(v) v(i0) + fr*(v(i1) - v(i0));        % linear interpolation, O(1)
         x0 = g(Xd);  y0 = g(alt);  th = g(th_all);  xcg = g(F.CG);
         ph = F.phase(min(max(round(tt/dt)+1,1),n));     % nearest sample for the discrete phase
         drogue_cmd = F.drogue_cmd(min(max(round(tt/dt)+1,1),n));
@@ -186,15 +198,19 @@ if EXPORT_VIDEO, exportVideo(); end
         end
 
         % camera follows the CG (matching the axes' pixel aspect so angles stay true)
-        pp = getpixelposition(axI);  ar = pp(4)/pp(3);  hw = VIEW_HALF*Lr;
+        hw = VIEW_HALF*Lr;
         xlim(axI,[x0-hw, x0+hw]);  ylim(axI,[y0-hw*ar, y0+hw*ar]);
         st = TICK_STEP(ph+1);   % phase value runs 0..6, MATLAB indexes from 1
         xl = xlim(axI);  yl = ylim(axI);
-        xticks(axI, ceil(xl(1)/st)*st : st : floor(xl(2)/st)*st);   % multiples of st inside the window
-        yticks(axI, ceil(yl(1)/st)*st : st : floor(yl(2)/st)*st);
-        set(boxO,'XData',x0+hw*[-1 1 1 -1 -1],'YData',y0+hw*ar*[-1 -1 1 1 -1]);
-        set(trailO,'XData',Xd(t<=tt),'YData',alt(t<=tt));  set(dotO,'XData',x0,'YData',y0);
 
+        % Only try to set new ticks when they change
+        newX = ceil(xl(1)/st)*st : st : floor(xl(2)/st)*st;
+        newY = ceil(yl(1)/st)*st : st : floor(yl(2)/st)*st;
+        if ~isequal(xticks(axI), newX), xticks(axI, newX); end
+        if ~isequal(yticks(axI), newY), yticks(axI, newY); end
+
+        set(boxO,'XData',x0+hw*[-1 1 1 -1 -1],'YData',y0+hw*ar*[-1 -1 1 1 -1]);
+        set(trailO,'XData',Xd(1:i0),'YData',alt(1:i0));  set(dotO,'XData',x0,'YData',y0);
         % net moment: a curved arrow in the lower-right of the window (positive = nose-up = counter-clockwise)
         mz = g(F.M_thr) + g(F.M_aero) + g(F.M_chute);
         Cm = [x0 + 0.78*hw,  y0 - 0.55*hw*ar];  rm = 0.22*Lr;           % arc center and radius
@@ -221,19 +237,40 @@ if EXPORT_VIDEO, exportVideo(); end
         pnames{ph+1}, tt, y0, spd_tot, g(F.Mach), rad2deg(al), fx, fz, mz, sm));
         title(axI,sprintf('Zoomed view (%.0f ft across)', 2*hw));
     end
-
-    function playCB(~,~)
-        speeds = [0.25 0.5 1 2 5];
-        if sl.Value >= t(end), sl.Value = t(1); end       % pressing Play at the end restarts
-        if btn.Value, btn.String = 'Pause'; else, btn.String = 'Play'; end
-        while ishghandle(btn) && btn.Value
-            tt = sl.Value + speeds(spdMenu.Value)*0.03;
-            if tt >= t(end)                                % stop at the end instead of looping
-                tt = t(end);  btn.Value = 0;
-            end
-            sl.Value = tt;  update(tt);  drawnow limitrate;  pause(0.03);
+    function tick()                                  % runs every ~40 ms while playing
+        if ~ishghandle(fig), return, end
+        tt = simT0 + speeds(spdMenu.Value)*toc(wall0);       % sim time from the WALL CLOCK
+        if tt >= t(end)
+            tt = t(end);  stop(tmr);  btn.Value = 0;  btn.String = 'Play';
         end
-        if ishghandle(btn), btn.String = 'Play'; end
+        tNow = tt;  sl.Value = tt;  update(tt);
+        drawnow limitrate;                           % lets queued clicks (Pause!) through
+    end
+
+    function toggleCB(~,~)
+        if btn.Value                                 % Play
+            if tNow >= t(end), tNow = t(1); end
+            rebase();  btn.String = 'Pause';  start(tmr);
+        else                                         % Pause
+            stop(tmr);  btn.String = 'Play';
+        end
+    end
+
+    function rebase()      % restart the clock from the current sim time
+        simT0 = tNow;  wall0 = tic;
+    end
+
+    function scrub(val)    % any slider use pauses playback
+        stop(tmr);  btn.Value = 0;  btn.String = 'Play';
+        tNow = val;  update(val);
+    end
+
+    function cacheAspect()  % pixel aspect ratio, recomputed only on resize
+        pp = getpixelposition(axI);  ar = pp(4)/pp(3);
+    end
+
+    function closeCB(~,~)   % without this the timer outlives the figure
+        stop(tmr);  delete(tmr);  delete(fig);
     end
 
     function exportVideo()
