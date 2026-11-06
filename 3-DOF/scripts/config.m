@@ -72,7 +72,7 @@ p.r.x_attach = mean([drogue_x_attach main_x_attach]);
 p.chute.d_drogue_in = 24;  p.chute.Cd_drogue = 1.16;
 p.chute.d_main_in = 100;   p.chute.Cd_main = 2.59;
 p.chute.tau_infl = 0.4; % time constant for inflation
-p.chute.main_alt = 900; % ft. DEFAULT: 900 ft; DELAY MODE: 800 ft. Can be set to any positive value below apogee
+p.chute.main_alt = 1200; % ft. DEFAULT: 900 ft; DELAY MODE: 800 ft. Can be set to any positive value below apogee
 
 % Failure/Delay Modes
 p.chute.DrogueFail = false; % TRUE: No drogue deployment; FALSE: Drogue will deploy

@@ -14,8 +14,8 @@ parent  = fileparts(scripts_dir);
 data_dir = fullfile(parent, 'data');
 addpath(scripts_dir, fullfile(scripts_dir, 'functions'));
 
-studyName = 'exp05_failureModes_grid';     % results/<studyName>/
-runRow    = 4;                         % which run (row of M) to replay
+studyName = 'exp05_failureModes_mainAlt_grid';     % results/<studyName>/
+runRow    = 6;                         % which run (row of M) to replay
 
 S   = load(fullfile(parent, 'results', studyName, 'mc_profiles.mat'), 'M', 'cfg');
 cfg = S.cfg;  row = S.M(runRow, :);

@@ -1,12 +1,12 @@
 function rocket_viewer_full(matfile)
 % rocket_viewer_full(matfile): overview + true-scale zoomed inset with alpha, CP, forces, wind
 %% ---- Settings ----
-EXPORT_VIDEO = false;  OVERWRITE = false;  VIDEO_FPS = 24;  VIDEO_SPEED = 2;
+EXPORT_VIDEO = false;  OVERWRITE = false;  VIDEO_FPS = 24;  VIDEO_SPEED = 1;
 VIEW_HALF = 1.5;      % inset half-width, in rocket lengths
 F_REF     = 50;       % lbf: forces well below this look linear, larger ones are compressed
 M_REF      = 10;      % lbf*ft: moments well below this look linear, larger ones compress
 ARROW_MAX = 0.8;      % longest force arrow, in rocket lengths
-TICK_STEP = [5 50 50 50 50 10 5];   % grid step [ft] by phase: Pad Boost Coast Drogue MainDelay Main Landed
+TICK_STEP = [5 25 50 50 50 10 5];   % grid step [ft] by phase: Pad Boost Coast Drogue MainDelay Main Landed
 col_red = [0.85 0.10 0.10];  
 col_blue = [0.10 0.30 0.90];
 col_orange = [0.85 0.45 0.00];
@@ -56,7 +56,7 @@ elseif td_v >= 150, td_col = "r"; td_mark = "hexagram"; end
 %% ---- Figure: overview (left) and zoomed inset (right) ----
 % axO: Overview axes
 fig = figure('Color','w','Position',[60 60 1350 700],'Name','Full-resolution viewer');
-set(gcf, 'Position', get(0, 'Screensize'));
+% set(gcf, 'Position', get(0, 'Screensize'));
 axO = axes(fig,'Position',[0.04 0.17 0.28 0.75]);  hold(axO,'on');  grid(axO,'on');  box(axO,'on');
 padx = 0.1*max(range(Xd), 0.2*max(alt));
 xlim(axO,[min(Xd)-padx, max(Xd)+padx]);  ylim(axO,[-0.05*max(alt), 1.1*max(alt)]);  daspect(axO,[1 1 1]);
@@ -109,7 +109,7 @@ legend(axI,[hCG hCP qFx qFz hMarc hV hArc],{'CG','CP (effective)','F_x (body x)'
 %% ---- Controls ----
 sl  = uicontrol(fig,'Style','slider','Units','normalized','Position',[0.04 0.08 0.93 0.03], ...
       'Min',t(1),'Max',t(end),'Value',t(1),'Callback',@(s,~) update(s.Value));
-btn = uicontrol(fig,'Style','togglebutton','String','Play/Pause','Units','normalized', ...
+btn = uicontrol(fig,'Style','togglebutton','String','Play','Units','normalized', ...
       'Position',[0.04 0.02 0.08 0.04],'Callback',@playCB);
 spdMenu = uicontrol(fig,'Style','popupmenu','String',{'0.25x','0.5x','1x','2x','5x'},'Value',3, ...
       'Units','normalized','Position',[0.14 0.02 0.08 0.04]);
@@ -224,11 +224,16 @@ if EXPORT_VIDEO, exportVideo(); end
 
     function playCB(~,~)
         speeds = [0.25 0.5 1 2 5];
+        if sl.Value >= t(end), sl.Value = t(1); end       % pressing Play at the end restarts
+        if btn.Value, btn.String = 'Pause'; else, btn.String = 'Play'; end
         while ishghandle(btn) && btn.Value
             tt = sl.Value + speeds(spdMenu.Value)*0.03;
-            if tt > t(end), tt = t(1); end
+            if tt >= t(end)                                % stop at the end instead of looping
+                tt = t(end);  btn.Value = 0;
+            end
             sl.Value = tt;  update(tt);  drawnow limitrate;  pause(0.03);
         end
+        if ishghandle(btn), btn.String = 'Play'; end
     end
 
     function exportVideo()
@@ -249,6 +254,7 @@ end
 function [Xw,Yw] = toWorld(s, w, x0, y0, th, xcg)
 % Body coordinates (s aft of the nose, w sideways) -> world (X, altitude).
 % The CG sits at (x0,y0), so a point s behind the nose is (xcg - s) ahead of the CG along the nose axis.
+% Ensures coordinates aligned with rocket body are placed at correct angle.
 Xw = x0 + (xcg - s).*cos(th) + w.*sin(th);
 Yw = y0 + (xcg - s).*sin(th) - w.*cos(th);
 end

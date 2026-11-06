@@ -8,12 +8,13 @@ exp_dir = fileparts(mfilename('fullpath'));  scripts_dir = fileparts(exp_dir);
 addpath(scripts_dir, fullfile(scripts_dir,'functions'));
 
 cfg = config();
-cfg.name = 'exp05_failureModes_grid';
+cfg.name = 'exp05_failureModes_mainAlt_grid';
 
 cfg.sweep = [
 sweepVar('chute.DrogueFail',  'levels', [false true], 'name','drogue_fail')
 sweepVar('chute.MainFail',    'levels', [false true], 'name','main_fail')
-sweepVar('chute.DrogueDelay', 'levels', [0 2],        'name','drogue_delay')
+%sweepVar('chute.DrogueDelay', 'levels', [0 2],        'name','drogue_delay')
+sweepVar('chute.main_alt',    'levels', [900, 1200, 1500],'name','main_alt')
 ];
 
 cfg.mc.mode      = 'grid';
