@@ -1,5 +1,6 @@
 function rocket_viewer_full(matfile)
-% rocket_viewer_full(matfile): overview + true-scale zoomed inset with alpha, CP, forces, wind
+% ROCKET_VIEWER_FULL(matfile)  Animate a run
+% Overview + True-scale zoomed inset with alpha, CP, forces, wind
 %% ---- Settings ----
 EXPORT_VIDEO = false;  OVERWRITE = false;  VIDEO_FPS = 24;  VIDEO_SPEED = 1;
 VIEW_HALF = 1.5;      % inset half-width, in rocket lengths
@@ -237,9 +238,9 @@ if EXPORT_VIDEO, exportVideo(); end
         pnames{ph+1}, tt, y0, spd_tot, g(F.Mach), rad2deg(al), fx, fz, mz, sm));
         title(axI,sprintf('Zoomed view (%.0f ft across)', 2*hw));
     end
-    function tick()                                  % runs every ~40 ms while playing
+    function tick()      % runs every ~40 ms while playing
         if ~ishghandle(fig), return, end
-        tt = simT0 + speeds(spdMenu.Value)*toc(wall0);       % sim time from the WALL CLOCK
+        tt = simT0 + speeds(spdMenu.Value)*toc(wall0); % sim time from the WALL CLOCK
         if tt >= t(end)
             tt = t(end);  stop(tmr);  btn.Value = 0;  btn.String = 'Play';
         end

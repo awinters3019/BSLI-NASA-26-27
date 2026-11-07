@@ -19,7 +19,7 @@ cfg.sweep = [
     ];
 
 cfg.mc.mode          = 'grid';
-cfg.mc.n_reps        = 10;                      % gust seeds per condition
+cfg.mc.n_reps        = 6;                      % gust seeds per condition
 cfg.mc.single_rep_if = @(T) T.wind_mph == 0;    % no gusts at 0 mph, so one rep is enough
 cfg.mc.n_pilot       = 10*PILOT;
 

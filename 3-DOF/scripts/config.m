@@ -6,7 +6,7 @@ function cfg = config()
 % For Monte Carlo analysis, I recommend making an experimental config under
 % the directory 3-DOF/scripts/experiments for good documentation.
 % This function calls:
-%   sweepVar: Converts desired sweep fields into a condensed struct
+%   sweepVar: Converts desired sweep fields into a condensed, parsable struct
 
 % ------- EVERYTHING BELOW CAN BE EDITED ------- %
 cfg.name = 'config_testing';                % results go to results/<name>/
@@ -22,6 +22,7 @@ p.mass.CG_start_ft    = 7.22;      % ft from nose, on pad
 p.mass.CG_end_ft      = 6.7533;    % ft from nose, after burn
 p.mass.MOI_start_kgm2 = 24.24;     % kg*m^2, on pad
 p.mass.MOI_end_kgm2   = 20.23;     % kg*m^2, after burn
+%p.mass.k_thrust      = 1;         % gain on thrust curve (option just for fun)
 
 % Environmental parameters
 p.envP.T_ground  = 59 + 459.67;     % degR (first number is deg F)
@@ -72,12 +73,12 @@ p.r.x_attach = mean([drogue_x_attach main_x_attach]);
 p.chute.d_drogue_in = 24;  p.chute.Cd_drogue = 1.16;
 p.chute.d_main_in = 100;   p.chute.Cd_main = 2.59;
 p.chute.tau_infl = 0.4; % time constant for inflation
-p.chute.main_alt = 1200; % ft. DEFAULT: 900 ft; DELAY MODE: 800 ft. Can be set to any positive value below apogee
+p.chute.main_alt = 900; % ft. DEFAULT: 900 ft; DELAY MODE: 800 ft. Can be set to any positive value below apogee
 
 % Failure/Delay Modes
 p.chute.DrogueFail = false; % TRUE: No drogue deployment; FALSE: Drogue will deploy
-p.chute.DrogueDelay = 0; % DEFAULT: 0, drogue right at apogee;  DELAY MODE: 2, deploys on secondary charge (2 seconds after).
 p.chute.MainFail = false; % TRUE: No main deployment; FALSE: Main will deploy
+p.chute.DrogueDelay = 0; % DEFAULT: 0, drogue right at apogee;  DELAY MODE: 2, deploys on secondary charge (2 seconds after).
 p.chute.MainDelay = 2; % DEFAULT: 2, main deploys 2 seconds after main_alt;
 
 
