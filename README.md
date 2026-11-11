@@ -13,12 +13,24 @@ Updated: 10/31/26
 
 The default branch is **`3-DOF`**. This guide below assumes you work on it, or on a short-lived branch that gets merged back into it.
 
+#### 0. Downloads within MATLAB so everything works well
+- In MATLAB, download Simulink by opening MATLAB, clicking the "Home" heading, and clicking "Add-ons". Sign in if you haven't already. Then, **type** the following into the add-ons search bar, and download each to your computer (MATLAB might restart each time). Once all are installed, move to the next step.
+1. Simulink
+2. Aerospace Toolbox
+3. Aerospace Blockset
+4. Parallel Computing Toolbox
+
 #### 1. Quick one-time setup
 
 1. Create a GitHub account and ask the project lead to add you as a **collaborator with Write access**. Accept the email invite.
 2. Install [GitHub Desktop](https://desktop.github.com) and sign in (File → Options → Accounts).
-3. **File → Clone Repository**, pick this repo from the list, choose a folder **outside** OneDrive/iCloud/Dropbox (syncing breaks Git), and click **Clone**.[^1]
-4. In MATLAB, open the cloned folder and open `3-DOF/model/TDOF_simulink_v2.slx`, and you'll see a model appear. The model's InitFcn finds the scripts and data on its own. You can now run the model!
+3. Hit **File → Clone Repository**, pick this repo from the list or paste the repo URL under the option **from internet**, choose a folder **outside** OneDrive/iCloud/Dropbox (syncing breaks Git), and click **Clone**.[^1]
+4. Open the cloned folder -- you did it! Open `3-DOF/model/TDOF_simulink_v2.slx`, and you'll see a model appear. The model's InitFcn finds the scripts and data on its own. You can now run the model!
+
+Not working? 
+- Try to make sure you clone the repository to a clean, empty folder
+- In the folder /scripts, try running the script NewInitFcn.m; this should help MATLAB find folders, or will give you more info on which folders it's not finding and why.
+- Try clicking on the enclosing 3-DOF_main folder, right clicking, and clicking "Add to Path --> All Folders and Subfolders".
 
 #### 2. Every work session
 
@@ -54,6 +66,14 @@ The default branch is **`3-DOF`**. This guide below assumes you work on it, or o
 - **Pushed something wrong:** **History tab → right-click the commit → Revert Changes in Commit**. This adds a new commit that undoes it, without erasing history.
 - **Uncommitted work blocks a branch switch:** choose **Stash** (or commit it) when GitHub Desktop asks.
 - **Stuck:** don't force anything. Ask a lead, and share a screenshot or the output of `git status -sb`.
+
+#### Struggling to move around in MATLAB? Use these in the command window (I use these all the time):
+- `cd ..` --> Go back a folder
+- `cd [folderName]` --> Go into folder
+- `pwd` --> Print which folder you're in right now
+- `[name of function/script, without .m]` --> Run that function/script in full; recommended you do this rather than hitting the run button or other methods of running for specific scripts, since MATLAB might not want to find folders correctly.
+- `help [commandName]` --> Pull up the manual for any command MATLAB understands.
+- `clc` --> Clear command window.
 
 [^1]: Terminal equivalent: `git clone git@github.com:awinters3019/BSLI-NASA-26-27.git` (or the HTTPS URL), then `cd BSLI-NASA-26-27`. (If that failed, type `ls` and see what the main folder inside is, then switch to it). An SSH needs a key added to your GitHub account (Settings → SSH and GPG keys); HTTPS asks for a Personal Access Token as the password, not your account password.
 [^2]: Terminal: `git checkout 3-DOF` then `git pull origin 3-DOF`. If Git says "need to specify how to reconcile divergent branches", run `git config pull.rebase false` once, then pull again.

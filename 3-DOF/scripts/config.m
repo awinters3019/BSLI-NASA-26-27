@@ -12,20 +12,20 @@ function cfg = config()
 cfg.name = 'config_testing';                % results go to results/<name>/
 
 %% ---- Files (read by load_data) ----
-cfg.files.thrust = 'ThrustData.csv'; % Name of thrust curve to reference
+cfg.files.thrust = 'L2200G_ThrustCurve.csv'; % Name of thrust curve to reference
 
 %% ---- Parameters (INPUTS only; derived values live in derive_params) ----
 % Rocket's beginning and end mass parameters
 p.mass.mass_start_lbm = 51.5;      % lbm, on pad
 p.mass.mass_end_lbm   = 45.92;     % lbm, after burn
+p.mass.burn_time      = 2.4;       % seconds
 p.mass.CG_start_ft    = 7.22;      % ft from nose, on pad
 p.mass.CG_end_ft      = 6.7533;    % ft from nose, after burn
 p.mass.MOI_start_kgm2 = 24.24;     % kg*m^2, on pad
 p.mass.MOI_end_kgm2   = 20.23;     % kg*m^2, after burn
-%p.mass.k_thrust      = 1;         % gain on thrust curve (option just for fun)
 
 % Environmental parameters
-p.envP.T_ground  = 59 + 459.67;     % degR (first number is deg F)
+p.envP.T_ground  = 59 + 459.67;% degR (first number is deg F)
 p.envP.P_ground  = 2116.22;    % psf
 p.envP.wind_mph  = 10;         % mph
 p.envP.wind_dir  = 0;          % rad

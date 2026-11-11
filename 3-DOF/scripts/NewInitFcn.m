@@ -17,3 +17,5 @@ envP = p.envP; r = p.r; data = p.data; chute = p.chute; launch = p.launch;
 Simulink.Bus.createObject(r);     %simInBus1
 Simulink.Bus.createObject(envP);  %simInBus2
 Simulink.Bus.createObject(chute); %simInBus3
+
+% subscale rocket motor name: Aerotech J270W-14A White Lightning

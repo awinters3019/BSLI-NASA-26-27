@@ -1,12 +1,13 @@
 function rocket_viewer_full(matfile)
-% ROCKET_VIEWER_FULL(matfile)  Animate a run
+% ROCKET_VIEWER_FULL(matfile)  Animate any Monte Carlo run.
 % Overview + True-scale zoomed inset with alpha, CP, forces, wind
+% Benjamin Brobst -- BSLI Simulations, Safety, Testing, & Recovery Team
 %% ---- Settings ----
 EXPORT_VIDEO = false;  OVERWRITE = false;  VIDEO_FPS = 24;  VIDEO_SPEED = 1;
-VIEW_HALF = 1.5;      % inset half-width, in rocket lengths
-F_REF     = 50;       % lbf: forces well below this look linear, larger ones are compressed
-M_REF      = 10;      % lbf*ft: moments well below this look linear, larger ones compress
-ARROW_MAX = 0.8;      % longest force arrow, in rocket lengths
+VIEW_HALF = 1.5;   % inset half-width, in rocket lengths
+F_REF     = 50;    % lbf: forces below this look linear, larger are logarithmic
+M_REF      = 10;   % lbf*ft: moments below this look linear, larger are logarithmic
+ARROW_MAX = 0.8;   % longest force arrow, in rocket lengths
 TICK_STEP = [5 25 50 50 50 10 5];   % grid step [ft] by phase: Pad Boost Coast Drogue MainDelay Main Landed
 col_red = [0.85 0.10 0.10];  
 col_blue = [0.10 0.30 0.90];
@@ -77,7 +78,6 @@ boxO   = plot(axO,NaN,NaN,'b-','LineWidth',1.5);          % shows what the inset
 axI = axes(fig,'Position',[0.37 0.17 0.60 0.75]);  hold(axI,'on');  grid(axI,'on');  box(axI,'on');
 daspect(axI,[1 1 1]);  xlabel(axI,'Downrange X [ft]');  ylabel(axI,'Altitude [ft]');
 yline(axI,0,'k-','LineWidth',3);
-
 plot(axI, Xap, Yap, 'p', 'MarkerSize',18, 'MarkerFaceColor','y', ...
     'MarkerEdgeColor','k', 'LineWidth',1.2, 'HandleVisibility','off');
 text(axI, Xap, Yap, sprintf('  Apogee: %.0f ft at t = %.1f s', Yap, tap),...
@@ -238,6 +238,7 @@ if EXPORT_VIDEO, exportVideo(); end
         pnames{ph+1}, tt, y0, spd_tot, g(F.Mach), rad2deg(al), fx, fz, mz, sm));
         title(axI,sprintf('Zoomed view (%.0f ft across)', 2*hw));
     end
+    % Functions for handling MATLAB video player logic.
     function tick()      % runs every ~40 ms while playing
         if ~ishghandle(fig), return, end
         tt = simT0 + speeds(spdMenu.Value)*toc(wall0); % sim time from the WALL CLOCK
