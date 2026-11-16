@@ -15,6 +15,10 @@ cfg.name = 'config_testing';                % results go to results/<name>/
 cfg.files.thrust = 'L2200G_ThrustCurve.csv'; % Name of thrust curve to reference
 
 %% ---- Parameters (INPUTS only; derived values live in derive_params) ----
+% Read manually from csv with NaN values omitted (annoying; only do if you're using a new motor)
+p.mass.thrustCutoff   = 190;       % arbitrary index value from cleaned loaded thrust curve; at index, burnout is hit.
+p.mass.apogeeCutoff   = 920;       % arbitrary index value from cleaned loaded thrust curve; at index, apogee is hit.
+
 % Rocket's beginning and end mass parameters
 p.mass.mass_start_lbm = 51.5;      % lbm, on pad
 p.mass.mass_end_lbm   = 45.92;     % lbm, after burn

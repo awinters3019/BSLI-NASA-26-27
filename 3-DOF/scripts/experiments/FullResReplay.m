@@ -14,8 +14,9 @@ parent  = fileparts(scripts_dir);
 data_dir = fullfile(parent, 'data');
 addpath(scripts_dir, fullfile(scripts_dir, 'functions'));
 
-studyName = 'exp_07_Cmq';     % results/<studyName>/
-runRow    = 6;                  % which run (row of M) to replay
+studyName = 'exp_00_subscale_grid_pilot';     % results/<studyName>/
+dispTitle = "Subscale Launch Sim 11/21/26";   % The title you want displayed in the video
+runRow    = 7;                  % which run (row of M) to replay
 
 S   = load(fullfile(parent, 'results', studyName, 'mc_profiles.mat'), 'M', 'cfg');
 cfg = S.cfg;  row = S.M(runRow, :);
@@ -32,4 +33,4 @@ F   = extract_fullres(out, p, 0.02);
 outdir = fullfile(parent, 'results', 'fullres');  if ~exist(outdir, 'dir'), mkdir(outdir); end
 matfile = fullfile(outdir, sprintf('%s_run%04d_fullres.mat', studyName, row.run_id));
 save(matfile, 'F', '-v7');
-rocket_viewer_full(matfile)
+rocket_viewer_full(matfile,dispTitle)

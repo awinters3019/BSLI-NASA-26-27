@@ -1,10 +1,9 @@
-function d = mass_vectors(m)
+function d = mass_vectors(m,cfg)
 % From inputted mass start and end parameters, convert to vectors which the 
 % lookup tables can parse.
     lbm2slug = 1/32.174;  
     kgm2_to_slugft2 = 0.737562;
-    burn_time = 2.4;      % s, fixed
-    thrustCutoff = 190; apogeeCutoff = 920; % index cutoffs from OpenRocket
+    thrustCutoff = cfg.params.mass.thrustCutoff; apogeeCutoff = cfg.params.mass.apogeeCutoff;
     
     mass_start = m.mass_start_lbm*lbm2slug;   
     mass_end   = m.mass_end_lbm*lbm2slug;
@@ -17,6 +16,6 @@ function d = mass_vectors(m)
     d.CG_vec       = [linspace(CG_start,CG_end,thrustCutoff)     CG_end*ones(1,apogeeCutoff-thrustCutoff)]';
     d.I_vec        = [linspace(MOI_start,MOI_end,thrustCutoff)   MOI_end*ones(1,apogeeCutoff-thrustCutoff)]';
 
-    I_dot = (MOI_end-MOI_start)/burn_time;
+    I_dot = (MOI_end-MOI_start)/cfg.params.mass.burn_time;
     d.dI_dt_vec    = [I_dot*ones(1,thrustCutoff) zeros(1,apogeeCutoff-thrustCutoff-1)]';
 end

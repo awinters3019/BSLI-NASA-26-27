@@ -25,7 +25,7 @@ if istable(d)
     d = table2struct(d, 'ToScalar', true);  % columns become fields
 end
 p.data = d;
-md = mass_vectors(p.mass);        % rebuilt every run, so sweeps work
+md = mass_vectors(p.mass,cfg);        % rebuilt every run, so sweeps work
 for f = fieldnames(md)'
     p.data.(f{1}) = md.(f{1});
 end

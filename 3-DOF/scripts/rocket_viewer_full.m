@@ -1,18 +1,20 @@
-function rocket_viewer_full(matfile)
-% ROCKET_VIEWER_FULL(matfile)  Animate any Monte Carlo run.
+function rocket_viewer_full(matfile,dispTitle)
+% ROCKET_VIEWER_FULL(matfile,dispTitle)  Animate any Monte Carlo run.
 % Overview + True-scale zoomed inset with alpha, CP, forces, wind
 % Benjamin Brobst -- BSLI Simulations, Safety, Testing, & Recovery Team
 %% ---- Settings ----
-EXPORT_VIDEO = false;  OVERWRITE = false;  VIDEO_FPS = 24;  VIDEO_SPEED = 1;
+EXPORT_VIDEO = true;  OVERWRITE = false;  VIDEO_FPS = 24;  VIDEO_SPEED = 1;
 VIEW_HALF = 1.5;   % inset half-width, in rocket lengths
 F_REF     = 50;    % lbf: forces below this look linear, larger are logarithmic
 M_REF      = 10;   % lbf*ft: moments below this look linear, larger are logarithmic
 ARROW_MAX = 0.8;   % longest force arrow, in rocket lengths
-TICK_STEP = [5 25 50 50 50 10 5];   % grid step [ft] by phase: Pad Boost Coast Drogue MainDelay Main Landed
+TICK_STEP = [5 20 20 20 20 10 5];   % grid step [ft] by phase: Pad Boost Coast Drogue MainDelay Main Landed
+% Colors
 col_red = [0.85 0.10 0.10];  
 col_blue = [0.10 0.30 0.90];
 col_orange = [0.85 0.45 0.00];
 col_bright_orange = [1 .6 0];
+col_gray = [.7 .7 .7];
 
 % Load paths and file data 
 scripts_dir = fileparts(mfilename('fullpath'));
@@ -136,7 +138,7 @@ if EXPORT_VIDEO, exportVideo(); end
         drogue_cmd = F.drogue_cmd(min(max(round(tt/dt)+1,1),n));
         main_cmd   = F.main_cmd(min(max(round(tt/dt)+1,1),n));
 
-        c  = col_blue;                                  % rocket body: always blue
+        c  = col_gray;                                  % rocket body: always blue
         xb = [cos(th); sin(th)];                        % body x (nose) in the (X, altitude) plane
         zb = [sin(th); -cos(th)];                       % body z = nose rotated 90 deg clockwise
 
@@ -214,7 +216,7 @@ if EXPORT_VIDEO, exportVideo(); end
         set(trailO,'XData',Xd(1:i0),'YData',alt(1:i0));  set(dotO,'XData',x0,'YData',y0);
         % net moment: a curved arrow in the lower-right of the window (positive = nose-up = counter-clockwise)
         mz = g(F.M_thr) + g(F.M_aero) + g(F.M_chute);
-        Cm = [x0 + 0.78*hw,  y0 - 0.55*hw*ar];  rm = 0.22*Lr;           % arc center and radius
+        Cm = [x0 + 0.78*hw,  y0 - 0.55*hw*ar];  rm = 0.22*Lr; % arc center and radius
         cc_ = linspace(0, 2*pi, 60);
         set(hMref,'XData',Cm(1)+rm*cos(cc_),'YData',Cm(2)+rm*sin(cc_));
         sweep = sign(mz) * log1p(abs(mz)/M_REF)/log1p(Mmax/M_REF) * 1.5*pi;   % arc angle grows with |M|
@@ -236,7 +238,7 @@ if EXPORT_VIDEO, exportVideo(); end
         set(hInfo,'String',sprintf(['%s\nt      %7.2f s\nalt    %7.0f ft\nspeed  %7.1f ft/s\nMach   %7.2f\n' ...
             'alpha  %7.1f deg\nFx     %7.1f lbf\nFz     %7.1f lbf\nM      %7.1f lbf-ft\nCP-CG  %7.2f cal'], ...
         pnames{ph+1}, tt, y0, spd_tot, g(F.Mach), rad2deg(al), fx, fz, mz, sm));
-        title(axI,sprintf('Zoomed view (%.0f ft across)', 2*hw));
+        title(axI,sprintf(dispTitle+': Zoomed view (%.0f ft across)', 2*hw));
     end
     % Functions for handling MATLAB video player logic.
     function tick()      % runs every ~40 ms while playing
