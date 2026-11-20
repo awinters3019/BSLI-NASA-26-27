@@ -3,7 +3,7 @@ function rocket_viewer_full(matfile,dispTitle)
 % Overview + True-scale zoomed inset with alpha, CP, forces, wind
 % Benjamin Brobst -- BSLI Simulations, Safety, Testing, & Recovery Team
 %% ---- Settings ----
-EXPORT_VIDEO = true;  OVERWRITE = false;  VIDEO_FPS = 24;  VIDEO_SPEED = 1;
+EXPORT_VIDEO = false;  OVERWRITE = false;  VIDEO_FPS = 24;  VIDEO_SPEED = 1;
 VIEW_HALF = 1.5;   % inset half-width, in rocket lengths
 F_REF     = 50;    % lbf: forces below this look linear, larger are logarithmic
 M_REF      = 10;   % lbf*ft: moments below this look linear, larger are logarithmic

@@ -19,7 +19,9 @@ a   = sqrt(gam*R*T);                     % ft/s
 mu  = 2.27e-8*T^1.5/(T + 198.72);        % slug/(ft*s), Sutherland in degR
 
 % Wind: 1/7 power-law shear on the in-plane component, plus gust (inactive)
-w_mean = envP.wind_speed*cos(envP.wind_dir); % * (max(h,1)/envP.h_ref)^(1/7);
+w_mean = envP.wind_speed*cos(envP.wind_dir);
+
+if envP.wind_shear_law, w_mean = w_mean * (max(h,1)/envP.h_ref)^(1/7); end
 
 env = struct('rho',rho,'a',a,'T',T,'P',P,'mu',mu, ...
              'wind_xe', w_mean + gust, 'wind_ze', 0);   % order = EnvBus

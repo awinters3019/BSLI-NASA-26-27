@@ -14,12 +14,16 @@ parent  = fileparts(scripts_dir);
 data_dir = fullfile(parent, 'data');
 addpath(scripts_dir, fullfile(scripts_dir, 'functions'));
 
-studyName = 'exp_00_subscale_grid_pilot';     % results/<studyName>/
+studyName = 'exp_00_subscale_grid';     % results/<studyName>/
 dispTitle = "Subscale Launch Sim 11/21/26";   % The title you want displayed in the video
-runRow    = 7;                  % which run (row of M) to replay
+runID     = 1;                         % run_id from mc_summary.csv
 
 S   = load(fullfile(parent, 'results', studyName, 'mc_profiles.mat'), 'M', 'cfg');
-cfg = S.cfg;  row = S.M(runRow, :);
+cfg = S.cfg;
+runRow = find(S.M.run_id == runID, 1); % row of M that holds this run_id
+assert(~isempty(runRow), 'run_id %d not found in %s (valid: %d to %d)', ...
+       runID, studyName, min(S.M.run_id), max(S.M.run_id));
+row = S.M(runRow, :);
 
 % Rebuild this run's overrides exactly as buildInput did
 sw = cfg.sweep;  ovr = cell(numel(sw), 2);

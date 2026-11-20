@@ -37,6 +37,7 @@ p.envP.h_ref     = 33;         % ft
 p.envP.gust_frac = 0.2;        % gust sigma = gust_frac * mean wind
 p.envP.gust_tau  = 1.5;        % s
 p.envP.gust_seed = 1;          
+p.envP.wind_shear_law = false; % Does wind speed increase at higher alt?
 
 % Launch rod parameters
 p.launch.cant_deg  = 5;        % cant angle (degrees) from 90 deg vertical

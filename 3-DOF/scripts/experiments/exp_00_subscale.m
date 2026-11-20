@@ -2,7 +2,7 @@
 % QUESTION: What does the subscale rocket trajectory look like?
 % MODE:     grid
 % SIZE:     
-PILOT = true;
+PILOT = false;
 
 exp_dir = fileparts(mfilename('fullpath'));  scripts_dir = fileparts(exp_dir);
 addpath(scripts_dir, fullfile(scripts_dir,'functions'));
@@ -27,13 +27,14 @@ cfg.params.MOI_start_kgm2 = 2.26;     % kg*m^2, on pad
 cfg.params.MOI_end_kgm2   = 1.96;     % kg*m^2, after burn
 
 % Environmental parameters
- cfg.params.T_ground       = 62+459.67;  % degR (first number is deg F)
- cfg.params.P_ground       = 2116.22;    % psf
-% cfg.params.envP.wind_mph  = 12;         % mph
- cfg.params.envP.h_ref     = 1043;       % ft (Cedarville)
-% cfg.params.envP.gust_frac = 0.6;        % gust sigma = gust_frac * mean wind
+ cfg.params.T_ground       = 62+459.67;   % degR (first number is deg F)
+ cfg.params.P_ground       = 2122;        % psf
+ cfg.params.envP.wind_mph  = 7;           % mph
+ cfg.params.envP.h_ref     = 1043;        % ft (Cedarville)
+% cfg.params.envP.gust_frac = 0.2;        % gust sigma = gust_frac * mean wind
 % cfg.params.envP.gust_tau  = 1.5;        % s
-% cfg.params.envP.gust_seed = 1;          
+ cfg.params.envP.gust_seed = 420;          % random pattern RNG seed (blaze it)
+% cfg.params.envP.wind_shear_law = false;
 
 % Launch rod parameters
 cfg.params.launch.cant_deg  = 5;        % cant angle (degrees) from 90 deg vertical
@@ -67,10 +68,13 @@ cfg.params.chute.main_alt = 950; % ft.
 %p.chute.DrogueDelay = 0; % DEFAULT: 0, drogue right at apogee;  DELAY MODE: 2, deploys on secondary charge (2 seconds after).
 %p.chute.MainDelay = 2; % DEFAULT: 2, main deploys 2 seconds after main_alt;
 
+cfg.mc.n_reps = 3;
+cfg.mc.single_rep_if = [];
+
 cfg.sweep = [
-    sweepVar('envP.wind_mph',  'levels', [4 8 12 16 20], 'name','wind_mph')
-    sweepVar('envP.gust_frac', 'levels', [0.2 0.3 0.4 0.5 0.6], 'name', 'gust_frac')
-    sweepVar('launch.cant_deg','levels',  [5 6 7 8 9 10],'name','cant_deg')
+    sweepVar('envP.wind_shear_law', 'levels', [true false], 'name', 'wind_shear_law')
+    sweepVar('envP.gust_frac', 'levels', [0.1 0.2 0.3], 'name', 'gust_frac')
+    sweepVar('launch.cant_deg','levels',  [5 6.25 7.5 8.75 10], 'name','cant_deg')
     ];
 
 cfg.mc.mode      = 'grid';
